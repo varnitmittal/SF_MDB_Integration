@@ -1,0 +1,40 @@
+:host {
+    display: block;
+    min-width: 84rem;
+}
+
+.artist-row {
+    align-items: center;
+    border-top: 1px solid var(--slds-g-color-border-base-1, #d8dde6);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 4.5rem 6rem minmax(12rem, 1.2fr) minmax(15rem, 1.4fr) 6rem 8rem 5.5rem 8rem 7rem 11rem;
+    min-height: 4.25rem;
+    padding: 0.875rem 1rem;
+}
+
+.artist-row:hover {
+    background: var(--slds-g-color-neutral-base-98, #fafaf9);
+}
+
+.cell {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.code {
+    font-family: monospace;
+}
+
+.select-cell {
+    overflow: visible;
+}
+
+.flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    white-space: normal;
+}

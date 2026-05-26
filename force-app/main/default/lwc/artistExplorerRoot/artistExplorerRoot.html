@@ -1,0 +1,230 @@
+<template>
+    <lightning-card title="Artist Explorer" icon-name="standard:people">
+        <div class="toolbar slds-grid slds-wrap slds-grid_vertical-align-center slds-p-horizontal_large slds-p-vertical_medium">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <div class="selection-pill">
+                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                    <span>{selectedSummaryLabel}</span>
+                </div>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
+                    <template lwc:if={hasRecords}>
+                        Showing page {currentPage} of {totalPages} ({totalRecords} artists)
+                    </template>
+                    <template lwc:else>
+                        Artists from MongoDB
+                    </template>
+                </p>
+            </div>
+
+            <div class="toolbar__actions slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-grid slds-grid_align-end">
+                <button
+                    class="artist-button artist-button_neutral"
+                    type="button"
+                    onclick={handleRefresh}
+                    disabled={isBusy}
+                >
+                    <lightning-icon icon-name="utility:refresh" size="xx-small"></lightning-icon>
+                    <span>Refresh</span>
+                </button>
+                <button
+                    class="artist-button artist-button_neutral"
+                    type="button"
+                    onclick={handleClearSelection}
+                    disabled={disableImportSelected}
+                >
+                    <lightning-icon icon-name="utility:clear" size="xx-small"></lightning-icon>
+                    <span>Clear Selection</span>
+                </button>
+                <button
+                    class="artist-button artist-button_brand"
+                    type="button"
+                    onclick={handleImportSelected}
+                    disabled={disableImportSelected}
+                >
+                    <lightning-icon icon-name="utility:upload" size="xx-small"></lightning-icon>
+                    <span>Import Selected</span>
+                </button>
+            </div>
+        </div>
+
+        <template lwc:if={isLoading}>
+            <div class="slds-is-relative loading-region">
+                <lightning-spinner alternative-text="Loading artists" size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <template lwc:elseif={errorMessage}>
+            <div class="slds-p-horizontal_large slds-p-bottom_large">
+                <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+                    <span class="slds-assistive-text">Error</span>
+                    <h2>{errorMessage}</h2>
+                </div>
+            </div>
+        </template>
+
+        <template lwc:elseif={hasRecords}>
+            <div class="slds-p-horizontal_large slds-p-bottom_large">
+                <div class="artist-table" role="table" aria-label="Mongo artist details">
+                    <div class="artist-table__header" role="row">
+                        <span role="columnheader">Select</span>
+                        <span role="columnheader">Code</span>
+                        <span role="columnheader">Name</span>
+                        <span role="columnheader">Email</span>
+                        <span role="columnheader">Tier</span>
+                        <span role="columnheader">Sales</span>
+                        <span role="columnheader">Artworks</span>
+                        <span role="columnheader">Country</span>
+                        <span role="columnheader">Portfolio</span>
+                        <span role="columnheader">Flags</span>
+                    </div>
+
+                    <template for:each={displayedArtists} for:item="artist">
+                        <c-artist-explorer-card
+                            key={artist.artist_code}
+                            artist={artist}
+                            is-importing={isImporting}
+                            selected={artist.isSelected}
+                            onselectionchange={handleSelectionChange}
+                        ></c-artist-explorer-card>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        <template lwc:else>
+            <div class="slds-p-horizontal_large slds-p-bottom_large">
+                <div class="empty-state slds-align_absolute-center slds-text-align_center">
+                    <div>
+                        <lightning-icon icon-name="utility:search" size="small"></lightning-icon>
+                        <p class="slds-m-top_small">No artists found for this page.</p>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <div slot="footer" class="footer-actions">
+            <button
+                class="artist-button artist-button_neutral"
+                type="button"
+                onclick={handlePrevious}
+                disabled={disablePrevious}
+            >
+                <lightning-icon icon-name="utility:chevronleft" size="xx-small"></lightning-icon>
+                <span>Previous</span>
+            </button>
+            <span class="footer-actions__page">Page {currentPage}</span>
+            <button
+                class="artist-button artist-button_neutral"
+                type="button"
+                onclick={handleNext}
+                disabled={disableNext}
+            >
+                <span>Next</span>
+                <lightning-icon icon-name="utility:chevronright" size="xx-small"></lightning-icon>
+            </button>
+        </div>
+    </lightning-card>
+
+    <template lwc:if={showImportSummary}>
+        <section
+            role="dialog"
+            tabindex="-1"
+            aria-modal="true"
+            aria-labelledby="import-summary-heading"
+            class="slds-modal slds-fade-in-open"
+        >
+            <div class="slds-modal__container summary-modal">
+                <header class="slds-modal__header">
+                    <button
+                        class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Close"
+                        onclick={closeImportSummary}
+                    >
+                        <lightning-icon
+                            icon-name="utility:close"
+                            alternative-text="Close"
+                            variant="inverse"
+                            size="small"
+                        ></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="import-summary-heading" class="slds-modal__title slds-hyphenate">
+                        Import Summary
+                    </h2>
+                    <p class="slds-m-top_x-small slds-text-body_regular">{importSummary.message}</p>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_large">
+                    <div class="summary-count">
+                        <span class="summary-count__number">{importSummary.importedCount}</span>
+                        <span>Artists imported into Salesforce</span>
+                    </div>
+
+                    <template lwc:if={hasImportedArtists}>
+                    <div class="slds-scrollable_x slds-m-top_large">
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Artist Code</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Salesforce Record</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={importedArtists} for:item="artist">
+                                    <tr key={artist.salesforceRecordId}>
+                                        <td>{artist.artist_code}</td>
+                                        <td>{artist.full_name}</td>
+                                        <td>{artist.email_address}</td>
+                                        <td>
+                                            <a href={artist.recordUrl} target="_blank">
+                                                {artist.salesforceRecordId}
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    </template>
+
+                    <template lwc:if={hasFailedArtists}>
+                        <h3 class="slds-text-heading_small slds-m-top_large">Failed Artists</h3>
+                        <div class="slds-scrollable_x slds-m-top_small">
+                            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Artist Code</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Email</th>
+                                        <th scope="col">Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={failedArtists} for:item="artist">
+                                        <tr key={artist.artist_code}>
+                                            <td>{artist.artist_code}</td>
+                                            <td>{artist.full_name}</td>
+                                            <td>{artist.email_address}</td>
+                                            <td>{artist.errorMessage}</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button
+                        label="Close"
+                        variant="brand"
+                        onclick={closeImportSummary}
+                    ></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

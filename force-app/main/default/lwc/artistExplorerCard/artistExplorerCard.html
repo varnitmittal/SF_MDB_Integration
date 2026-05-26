@@ -1,0 +1,38 @@
+<template>
+    <div class="artist-row" role="row">
+        <span class="cell select-cell" role="cell">
+            <lightning-input
+                type="checkbox"
+                variant="label-hidden"
+                label={selectionLabel}
+                checked={selected}
+                disabled={isImporting}
+                onchange={handleSelectionChange}
+            ></lightning-input>
+        </span>
+        <span class="cell code" role="cell" title={artist.artist_code}>{artist.artist_code}</span>
+        <span class="cell" role="cell" title={artist.full_name}>{artist.full_name}</span>
+        <span class="cell" role="cell" title={artist.email_address}>{artist.email_address}</span>
+        <span class="cell" role="cell">{artist.tier_level}</span>
+        <span class="cell" role="cell">
+            <lightning-formatted-number
+                value={artist.sales_amount}
+                format-style="currency"
+                currency-code="USD"
+            ></lightning-formatted-number>
+        </span>
+        <span class="cell" role="cell">{artist.artworks_sold}</span>
+        <span class="cell" role="cell" title={artist.country}>{artist.country}</span>
+        <span class="cell" role="cell">
+            <lightning-formatted-number value={artist.portfolio_score}></lightning-formatted-number>
+        </span>
+        <span class="cell flags" role="cell">
+            <template lwc:if={artist.rising_star}>
+                <lightning-badge label="Rising"></lightning-badge>
+            </template>
+            <template lwc:if={artist.available_for_exhibitions}>
+                <lightning-badge label="Exhibitions"></lightning-badge>
+            </template>
+        </span>
+    </div>
+</template>
